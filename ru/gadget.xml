@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gadget>
+    <name>Top Processes</name>
+    <namespace>Brh.Gadgets</namespace>
+    <version>1.1</version>
+    <author name="Benjamin Hollis">
+        <info url="http://brh.numbera.com/software/sidebargadgets/" text="BRH.numbera.com" />
+    	<logo src="icon.png" />
+    </author>
+    <copyright>&#169; 2007</copyright>
+    <description>Показиываем какие процесы используют большую часть CPU.</description>
+	<icons>
+    	<icon height="64" width="64" src="icon.png" />
+    </icons>
+    <hosts>
+        <host name="sidebar">
+            <base type="HTML" apiVersion="1.0.0" src="TopProcess.html" />
+            <permissions>full</permissions>
+            <platform minPlatformVersion="0.3" />
+        </host>
+    </hosts>
+</gadget>

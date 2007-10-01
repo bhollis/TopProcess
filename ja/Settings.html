@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<title>Top Process Settings</title>	
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<link type="text/css" rel="stylesheet" href="Settings.css"/>
+        <script type="text/javascript">
+    		badNumProcesses = "プロセスを幾ら現すを入力してください。";
+    		badUpdateInterval = "更新中の間を入力してっください。";
+  	</script>
+	<script type="text/javascript" src="Settings.js"></script>
+</head>
+<body onload="init();"> 
+	<p><label>プロセスを幾ら現します： <input id="numProcesses" type="text" size="4" value="3"></label></p>
+	<p><label>更新中の間（秒）： <input id="updateInterval" type="text" size="4" value="5"></label></p>
+        <p><label>Display: <select id="resourceType">
+                <option value="cpu">CPU usage</option>
+                <option value="memory">Memory Usage (Working Set)</option>
+            </select>
+        </label></p>
+	<p><label><input id="noFade" type="checkbox">テキスト暈けを止める。（文字をきれいにします。）</label></p>
+	<span id="error"></span>
+</body>
+</html>

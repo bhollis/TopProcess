@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<title>Top Process Settings</title>	
+	<link type="text/css" rel="stylesheet" href="Settings.css"/>
+  <script type="text/javascript">
+    badNumProcesses = "Please input a number for the number of processes.";
+    badUpdateInterval = "Please input a number for the update interval.";
+  </script>
+  <script type="text/javascript" src="Settings.js"></script>
+</head>
+<body onload="init();">
+	<p><label>Numero di processi da visualizzare: <input id="numProcesses" type="text" size="4" value="3"></label></p>
+	<p><label>Frequenza aggiornamenti in secondi: <input id="updateInterval" type="text" size="4" value="5"></label></p>
+  <p><label>Visualizza: <select id="resourceType">
+            <option value="cpu">Utilizzo di CPU</option>
+            <option value="memory">Utilizzo di memoria (Working Set)</option>
+        </select>
+    </label></p>
+  <p><label><input id="noFade" type="checkbox">Disabilità dissolvenza testo (migliora visibilità)</label></p>
+  <span id="error"></span>
+</body>
+</html>

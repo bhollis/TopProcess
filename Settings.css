@@ -1,0 +1,16 @@
+body {
+	font-family: 'Segoe UI', Tahoma, Verdana, Arial, sans-serif;
+	font-size: 9pt;
+	width:250px;
+	height:150px;
+	margin: 0;
+	padding: 0;
+}
+
+#error {
+	color: red;
+}
+
+p {
+    margin: 0 0 .5em 0;
+}
