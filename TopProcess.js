@@ -19,7 +19,7 @@ function ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet) 
 	this.kernelModeTime = Number(kernelModeTime);
 	this.userModeTime = Number(userModeTime);
 	this.totalTime = this.kernelModeTime + this.userModeTime;
-    this.workingSet = Number(workingSet);
+  this.workingSet = Number(workingSet);
 }
 
 function sortProcessesById(a,b) {
@@ -40,13 +40,14 @@ function sortProcessesByTotalTime(a,b) {
 	return b.totalTime - a.totalTime;
 }
 
+var oWMI = GetObject("winmgmts://./root/cimv2");
+
 /**
  * Gets a bunch of ProcessInfos containing the processes we're interested in.
  */
 function getProcessStats() {
 	try {
-		var oWMI = GetObject("winmgmts://./root/cimv2");
-		var cItems = oWMI.ExecQuery("Select * from Win32_Process");
+		var cItems = oWMI.ExecQuery("Select processid, name, kernelmodetime, usermodetime, workingsetsize from Win32_Process");
 
 		var processes = [];
 
@@ -61,8 +62,6 @@ function getProcessStats() {
 			
 			processes.push(new ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet));
 		}
-		
-		processes.sort(sortProcessesById);
 		
 		return processes;
 	}
@@ -209,6 +208,7 @@ function updateBackground(height) {
 function init() {
 	LoadSettings();
 	window.oldProcesses = getProcessStats();
+  window.oldProcesses.sort(sortProcessesById);
 	window.updateTimer = setTimeout("update()", 500);
 	
 	bg.style.height = document.body.style.height;
@@ -225,6 +225,7 @@ function update() {
     	var processes = getProcessStats();
       
       if(window.resourceType === "cpu") {
+    		processes.sort(sortProcessesById);
     		var topProcessInfo = getTopProcessesByCPU(processes, window.oldProcesses, window.numProcesses);			
     		window.oldProcesses = processes;
     		
