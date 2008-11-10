@@ -55,12 +55,17 @@ function getProcessStats() {
 		for (; !cItem.atEnd(); cItem.moveNext())
 		{
 			var processId = cItem.item().ProcessId;
+      
+      if (!processId && processId !== 0) {
+        processId = -1;
+      }
+      
 			var name = cItem.item().Name;
 			var kernelModeTime = cItem.item().KernelModeTime;
 			var userModeTime = cItem.item().UserModeTime;
             var workingSet = cItem.item().WorkingSetSize;
 			
-			processes.push(new ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet));
+      processes.push(new ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet));
 		}
 		
 		return processes;
@@ -116,7 +121,7 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 			systemTotalTime += process.totalTime;
 			
 			// ignore system processes
-			if(process.processId != 0)
+			if( process.processId )
 				topProcesses.push(process);
 		}
 		
@@ -201,7 +206,7 @@ function update() {
     		for(var i = 0; i<topProcesses.length; i++) {
     			var process = topProcesses[i];		
     			var percentUsage = 	Math.round((process.totalTime / totalTime) * 10000) / 100;
-    			result += "<tr" + (percentUsage > 50 ? " class=\"hotprocess\"" : "") + "><td class=\"processName\">" + process.name + "</td><td class=\"percentage\">" + percentUsage + "%<td>";
+    			result += "<tr" + (percentUsage > 50 ? " class=\"hotprocess\"" : "") + "><td class=\"processName\">" + process.name + "</td><td class=\"percentage\">" + percentUsage.toFixed(2) + "%<td>";
     		}
 		  }
       else if(window.resourceType === "memory") {
