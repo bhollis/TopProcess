@@ -131,27 +131,6 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 	}
 }
 
-function fade(elementId, fadeAmount) {
-	var element = document.getElementById(elementId);
-	
-  if(!element.style.opacity)
-    element.style.opacity = 1;
-  
-	// clamp opacity to 0..1
-	element.style.opacity = Math.min(1, Math.max(0, element.style.opacity + fadeAmount));
-	element.style.filter = "alpha(opacity = " + element.style.opacity * 100 + ")";
-
-	if(element.style.opacity === 0)
-		element.parentNode.removeChild(element);
-	else if(element.style.opacity === 1) {
-		element.style.filter = '';
-
-		return;
-	}
-	else
-		window.setTimeout("fade(\"" + element.id + "\"," + fadeAmount + ");", 10);
-}
-
 function updateGadgetContent(content) {
 	try {
 		if(!this.updateNum)
@@ -165,26 +144,13 @@ function updateGadgetContent(content) {
 		
 		newGadgetContent.innerHTML = content;
 		
-    if(!window.noFade) {
-        newGadgetContent.style.opacity = 0;
-    }
-		
 		processList.appendChild(newGadgetContent);
 		
 		document.body.style.height = newGadgetContent.offsetHeight + 10 + 11;
 		updateBackground(newGadgetContent.offsetHeight + 10 + 11);
 		
-		if(!window.noFade) {
-        fade(newGadgetContent.id, 0.10);
-    }
-		
 		if(newGadgetContent.previousSibling && newGadgetContent.previousSibling.className === "content") {
-        if(window.noFade) {
-             newGadgetContent.parentNode.removeChild(newGadgetContent.previousSibling);
-        }
-        else {
-		         fade(newGadgetContent.previousSibling.id, -0.10);
-        }
+      newGadgetContent.parentNode.removeChild(newGadgetContent.previousSibling);
 		}
 	}
 	catch (err) {
@@ -297,8 +263,6 @@ function LoadSettings() {
 		window.updateInterval = updateInterval * 1000;
 	else
 		window.updateInterval = 5000;
-        
-    window.noFade = System.Gadget.Settings.read("noFade");
     
     var resourceType = System.Gadget.Settings.read("resourceType");
     if(resourceType != "")
