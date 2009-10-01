@@ -2,13 +2,13 @@
 <gadget>
     <name>Top Processes</name>
     <namespace>Brh.Gadgets</namespace>
-    <version>1.3</version>
+    <version>1.4</version>
     <author name="Benjamin Hollis">
         <info url="http://brh.numbera.com/software/sidebargadgets/" text="BRH.numbera.com" />
     	<logo src="icon.png" />
     </author>
     <copyright>&#169; 2007</copyright>
-    <description>Displays the processes that are using the most CPU or memory on your system.</description>
+    <description>Displays the processes that are using the most CPU, memory, or IO on your system.</description>
 	<icons>
     	<icon height="64" width="64" src="icon.png" />
     </icons>
