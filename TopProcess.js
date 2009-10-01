@@ -16,37 +16,91 @@
 function ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet) {
 	this.processId = processId;
 	this.name = name;
-	this.kernelModeTime = Number(kernelModeTime);
-	this.userModeTime = Number(userModeTime);
+	this.kernelModeTime = Number(kernelModeTime || 0) ;
+	this.userModeTime = Number(userModeTime || 0);
 	this.totalTime = this.kernelModeTime + this.userModeTime;
-  this.workingSet = Number(workingSet);
+  this.workingSet = Number(workingSet || 0);
 }
 
 function sortProcessesById(a,b) {
-	return a.processId - b.processId;
+  try {
+    var aVal = a ? a.processId : -100;
+    var bVal = b ? b.processId : -100;
+    return aVal - bVal;
+  } catch (e) {
+    var message = '';
+    if (a)
+      message += 'a:' + a.name + ' - ';
+      
+    if (b)
+      message += 'b:' + b.name + ' - ';
+   
+    
+    log("sortProcessesById: " + message + e.message);  
+      
+    throw message + e.message;
+  }
 }
 
 /**
  * Sorts processes by workingSetSize
  */
 function sortProcessesByMem(a,b) {
-    return b.workingSet - a.workingSet;
+  try {
+    var aVal = a ? a.workingSet : -100;
+    var bVal = b ? b.workingSet : -100;
+    return bVal - aVal;
+  } catch (e) {
+    var message = '';
+    if (a)
+      message += 'a:' + a.name + ' - ';
+      
+    if (b)
+      message += 'b:' + b.name + ' - ';
+      
+    log("sortProcessesByMem: " + message + e.message);
+    
+    throw message + e.message;
+  }
 }
 
 /**
  * Sorts Processes by totalTime, with the largest total time first.
  */
 function sortProcessesByTotalTime(a,b) {
-	return b.totalTime - a.totalTime;
+	try {
+    var aVal = a ? a.totalTime : -100;
+    var bVal = b ? b.totalTime : -100;
+    return bVal - aVal;
+  } catch (e) {
+    var message = '';
+    if (a)
+      message += 'a:' + a.name + ' - ';
+      
+    if (b)
+      message += 'b:' + b.name + ' - ';
+      
+    log("sortProcessesByTotalTime: " + message + e.message);
+    
+    throw message + e.message;
+  }
 }
 
-var oWMI = GetObject("winmgmts://./root/cimv2");
+function log(content) {
+  var fso = new ActiveXObject("Scripting.FileSystemObject");
+  var s = fso.OpenTextFile(System.Gadget.path + "\\gadget.log", 8, true);
+
+  s.WriteLine(new Date() + ": " + content);
+  s.Close();
+}
+
 
 /**
  * Gets a bunch of ProcessInfos containing the processes we're interested in.
  */
 function getProcessStats() {
 	try {
+    var oWMI = GetObject("winmgmts://./root/cimv2");
 		var cItems = oWMI.ExecQuery("Select processid, name, kernelmodetime, usermodetime, workingsetsize from Win32_Process");
 
 		var processes = [];
@@ -54,16 +108,17 @@ function getProcessStats() {
 		var cItem = new Enumerator(cItems);
 		for (; !cItem.atEnd(); cItem.moveNext())
 		{
-			var processId = cItem.item().ProcessId;
+      var item = cItem.item();
+			var processId = item.ProcessId;
       
       if (!processId && processId !== 0) {
         processId = -1;
       }
       
-			var name = cItem.item().Name;
-			var kernelModeTime = cItem.item().KernelModeTime;
-			var userModeTime = cItem.item().UserModeTime;
-            var workingSet = cItem.item().WorkingSetSize;
+			var name = item.Name;
+			var kernelModeTime = item.KernelModeTime;
+			var userModeTime = item.UserModeTime;
+      var workingSet = item.WorkingSetSize;
 			
       processes.push(new ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet));
 		}
@@ -71,15 +126,17 @@ function getProcessStats() {
 		return processes;
 	}
 	catch (err) {
-		debug.innerHTML += "getProcessStats(): " + err.description + "<br>";
+    log("getProcessStats: " + err);
 		throw err;
 	}
 }
 
+// I'm using "startIndex" to search the array in spurts, instead of re-scanning over and over
+// BUG: 'processId' is null or not an object getTopProcessesbycpu
 function findCorrespondingProcess(process, oldProcesses, startIndex) {
 	try {
 		var index = startIndex;
-		while(index < oldProcesses.length && process.processId != oldProcesses[index].processId) {
+		while(index < oldProcesses.length && oldProcesses[index] && process.processId != oldProcesses[index].processId) {
 			index++;
 		}
 		
@@ -92,7 +149,7 @@ function findCorrespondingProcess(process, oldProcesses, startIndex) {
 		}
 	}
 	catch (err) {
-		debug.innerHTML += "findCorrespondingProcess(): " + err.description + "<br>";
+    log("findCorrespondingProcess: " + err);
 		throw err;
 	}
 }
@@ -110,11 +167,24 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 		for(var i=0; i<processes.length; i++) {
 			var process = processes[i];
 
-			var oldInfo = findCorrespondingProcess(process, oldProcesses, oldProcessIndex);
-			oldProcessIndex = oldInfo.newIndex;
+      if ( !process || process.processId == null || process.totalTime == null) {
+        continue;
+      }
+
+      var oldInfo;
+      try {
+		    oldInfo = findCorrespondingProcess(process, oldProcesses, oldProcessIndex);
+	    }
+      catch(ex) {        
+        log("findCorrespondingProcess cpu: " + err);
+		    throw err;
+      }
+      
+      oldProcessIndex = oldInfo.newIndex;
 			var oldProcess = oldInfo.oldProcess;
 			
-			if(oldProcess != null) {
+			if(oldProcess && oldProcess.kernelModeTime != null && oldProcess.userModeTime != null) {
+        // Find the delta in time since the last sample (don't use totalTime on oldProcess, it's already been deltafied)
 				process.totalTime -= (oldProcess.kernelModeTime + oldProcess.userModeTime);
 			}			
 			
@@ -125,17 +195,25 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 				topProcesses.push(process);
 		}
 		
-		topProcesses.sort(sortProcessesByTotalTime);
+    try {
+      topProcesses.sort(sortProcessesByTotalTime);
+    }
+    catch(ex) {
+      log("sortProcessesByTotalTime(): " + err);
+		  throw err;
+    }
 		
+    // TODO: Replace sort / slice with more efficient thing? http://en.wikipedia.org/wiki/Selection_algorithm#
 		return { topProcesses: topProcesses.slice(0,numTop),
 				 totalTime: systemTotalTime }; 
 	}
 	catch (err) {
-		debug.innerHTML += "getTopProcessesByCPU(): " + err.description + "<br>";
+    log("getTopProcessesByCPU(): " + err);
 		throw err;
 	}
 }
 
+// TODO: Maybe this can be made faster?
 function updateGadgetContent(content) {
 	try {
 		if(!this.updateNum)
@@ -159,7 +237,7 @@ function updateGadgetContent(content) {
 		}
 	}
 	catch (err) {
-		debug.innerHTML += "updateGadgetContent(): " + err.description + "<br>";
+    log("updateGadgetContent(): " + err);
 		throw err;
 	}
 }
@@ -177,6 +255,7 @@ function updateBackground(height) {
 }
 
 function init() {
+  log("Starting");
 	LoadSettings();
 	window.oldProcesses = getProcessStats();
   window.oldProcesses.sort(sortProcessesById);
@@ -188,62 +267,102 @@ function init() {
 	window.footer = bg.addImageObject("images/bottom.png",0,55); 
 }
 
+function reset() {
+  log("RESETTING");
+	window.oldProcesses = getProcessStats();
+  window.oldProcesses.sort(sortProcessesById);
+	window.updateTimer = setTimeout("update()", 500);
+}
+
 function update() {
   // Clear any other pending "update";
   clearTimeout(window.updateTimer);
 
-	try {
-    	var processes = getProcessStats();
+  var result = "";
+  try {
+    var processes = getProcessStats();
+    
+    if(!processes) {
+      log("processes was null from getProcessStats");
+      throw "processes was null from getProcessStats"
+    }    
+    
+    if (window.resourceType === "cpu") {
+      try {
+        processes.sort(sortProcessesById);
+      } 
+      catch (prob) {
+        log("failed sorting by id: " + prob);
+        throw "sorting: " + prob;
+      }
+      var topProcessInfo = getTopProcessesByCPU(processes, window.oldProcesses, window.numProcesses);
+      window.oldProcesses = processes;
       
-      if(window.resourceType === "cpu") {
-    		processes.sort(sortProcessesById);
-    		var topProcessInfo = getTopProcessesByCPU(processes, window.oldProcesses, window.numProcesses);			
-    		window.oldProcesses = processes;
-    		
-    		var topProcesses = topProcessInfo.topProcesses;
-    		var totalTime = topProcessInfo.totalTime;
-    		var result = "";
-    		for(var i = 0; i<topProcesses.length; i++) {
-    			var process = topProcesses[i];		
-    			var percentUsage = 	Math.round((process.totalTime / totalTime) * 10000) / 100;
-    			result += "<tr" + (percentUsage > 50 ? " class=\"hotprocess\"" : "") + "><td class=\"processName\">" + process.name + "</td><td class=\"percentage\">" + percentUsage.toFixed(2) + "%<td>";
-    		}
-		  }
-      else if(window.resourceType === "memory") {
-    		processes.sort(sortProcessesByMem);
-    		
-        var topProcesses = processes.slice(0,window.numProcesses);
-            
-        var result = "";
-    		for(var i = 0; i<topProcesses.length; i++) {
-    			var process = topProcesses[i];	
-                var memusage = process.workingSet;	
-    			result += "<tr" + (memusage > 500 ? " class=\"hotprocess\"" : "") + "><td class=\"processName\">" + process.name + "</td><td class=\"memUsage\">" + formatBytes(memusage) + "<td>";
-  		}
+      try {
+        var topProcesses = topProcessInfo.topProcesses || [];
+        var totalTime = topProcessInfo.totalTime;
+        for (var i = 0; i < topProcesses.length; i++) {
+          var process = topProcesses[i];
+          if ( !process || process.processId == null) {
+            continue;
+          }
+          var percentUsage = Math.round((process.totalTime / totalTime) * 10000) / 100;
+          result += '<tr><td class="processName">' + process.name + '</td><td class="percentage">' + percentUsage.toFixed(2) + "%<td>";
+        }
+      } catch (prob) {
+        log("failed getting process time: " + prob.message);
+        throw "output: " + prob.message;
+      }
     }
+    else 
+      if (window.resourceType === "memory") {
+        try {
+          processes.sort(sortProcessesByMem);
+        } 
+        catch (prob) {
+          log("failed sorting memory: " + prob.message);
+          throw "sorting: " + prob.message;
+        }
         
-		updateGadgetContent("<table>" + result + "</table>");
-		
-		window.updateTimer = setTimeout("update()", window.updateInterval);
-	}
-	catch (err) {
-		debug.innerHTML += "update(): " + err.description + "<br>";
-		throw err;
-	}
+        var topProcesses = processes.slice(0, window.numProcesses);
+        
+        try {
+          for (var i = 0; i < topProcesses.length; i++) {
+            var process = topProcesses[i];
+            if ( !process || process.processId == null) {
+              continue;
+            }
+            var memusage = process.workingSet;
+            result += '<tr><td class="processName">' + process.name + '</td><td class="memUsage">' + formatBytes(memusage) + "<td>";
+          }
+        } catch (prob) {
+          log("failed getting working set: " + prob.message);
+          throw "output: " + prob.message;
+        }
+      }
+    
+    updateGadgetContent("<table>" + result + "</table>");
+    
+    window.updateTimer = setTimeout("update()", window.updateInterval);
+  } 
+  catch (err) {
+    log("update: " + err);
+    reset();
+  }
 }
 
 function formatBytes(bytes) {
     if(bytes < 1024) {
         return bytes + "B";
     }
-    else if(bytes < 1024*1024) {
-        return Math.round((bytes / 1024)) + "KB";
+    else if(bytes < 1048576 /*1024*1024*/) {
+        return Math.round(bytes / 1024) + "KB";
     }
-    else if(bytes < 1024*1024*1024) {
-        return Math.round((bytes / (1024*1024))) + "MB";
+    else if(bytes < 1073741824 /*1024*1024*1024*/) {
+        return Math.round(bytes / 1048576) + "MB";
     }
-    else if(bytes < 1024*1024*1024*1024) {
-        return Math.round((bytes / (1024*1024*1024))) + "GB";
+    else if(bytes < 1099511627776 /*1024*1024*1024*1024*/) {
+        return Math.round(bytes / 1073741824) + "GB";
     }
     else 
         return "Too big";
@@ -258,21 +377,14 @@ System.Gadget.onSettingsClosed = function() {
 
 function LoadSettings() {
 	var numProcesses = System.Gadget.Settings.read("numProcesses");
-	if (numProcesses != "")
-		window.numProcesses = numProcesses;
-	else
-		window.numProcesses = 3;
-		
+	window.numProcesses = numProcesses || 3;
+	log("numProcesses: " + window.numProcesses);	
+    
 	var updateInterval = System.Gadget.Settings.read("updateInterval");
-	if (updateInterval != "")
-		window.updateInterval = updateInterval * 1000;
-	else
-		window.updateInterval = 5000;
+	window.updateInterval = Math.max((updateInterval || 0) * 1000, 3000);
+	log("updateInterval: " + window.updateInterval);	
     
-    var resourceType = System.Gadget.Settings.read("resourceType");
-    if(resourceType != "")
-        window.resourceType = resourceType;
-    else
-        window.resourceType = "cpu";
-    
+  var resourceType = System.Gadget.Settings.read("resourceType");
+  window.resourceType = resourceType || "cpu";
+	log("resourceType: " + window.resourceType);	
 }

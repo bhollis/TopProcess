@@ -39,7 +39,6 @@ function SettingsClosing(event){
       
       try {
         var updateInterval = Number(document.getElementById("updateInterval").value);
-        
       } 
       catch (err) {
         error.innerText = badUpdateInterval;
@@ -47,7 +46,7 @@ function SettingsClosing(event){
         return;
       }
       if (updateInterval > 0) {
-        System.Gadget.Settings.write("updateInterval", updateInterval);
+        System.Gadget.Settings.write("updateInterval", Math.max(updateInterval, 5));
       }
             
       System.Gadget.Settings.write("resourceType", document.getElementById("resourceType").value);

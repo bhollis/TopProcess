@@ -52,10 +52,6 @@ td.memUsage {
 	width: 43px;
 }
 
-tr.hotprocess {
-	color: red;
-}
-
 .content {
 	position: absolute;
 	left: 7px;
