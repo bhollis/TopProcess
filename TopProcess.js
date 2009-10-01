@@ -13,13 +13,16 @@
  * @param {Number} kernelModeTime
  * @param {Number} userModeTime
  */
-function ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet) {
+function ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet, readBytes, writeBytes) {
 	this.processId = processId;
 	this.name = name;
 	this.kernelModeTime = Number(kernelModeTime || 0) ;
 	this.userModeTime = Number(userModeTime || 0);
 	this.totalTime = this.kernelModeTime + this.userModeTime;
   this.workingSet = Number(workingSet || 0);
+	this.readBytes = Number(readBytes || 0);
+	this.writeBytes = Number(writeBytes || 0);
+	this.totalBytes = this.readBytes + this.writeBytes;
 }
 
 function sortProcessesById(a,b) {
@@ -86,6 +89,28 @@ function sortProcessesByTotalTime(a,b) {
   }
 }
 
+/**
+ * Sorts Processes by delta bytes written and read, with the largest total size first.
+ */
+function sortProcessesByIOBytes(a,b) {
+	try {
+    var aVal = a ? a.totalBytes : -100;
+    var bVal = b ? b.totalBytes : -100;
+    return bVal - aVal;
+  } catch (e) {
+    var message = '';
+    if (a)
+      message += 'a:' + a.name + ' - ';
+      
+    if (b)
+      message += 'b:' + b.name + ' - ';
+      
+    log("sortProcessesByIOBytes: " + message + e.message);
+    
+    throw message + e.message;
+  }
+}
+
 function log(content) {
   var fso = new ActiveXObject("Scripting.FileSystemObject");
   var s = fso.OpenTextFile(System.Gadget.path + "\\gadget.log", 8, true);
@@ -101,7 +126,7 @@ function log(content) {
 function getProcessStats() {
 	try {
     var oWMI = GetObject("winmgmts://./root/cimv2");
-		var cItems = oWMI.ExecQuery("Select processid, name, kernelmodetime, usermodetime, workingsetsize from Win32_Process");
+		var cItems = oWMI.ExecQuery("Select processid, name, kernelmodetime, usermodetime, workingsetsize, readtransfercount, writetransfercount from Win32_Process");
 
 		var processes = [];
 
@@ -119,8 +144,10 @@ function getProcessStats() {
 			var kernelModeTime = item.KernelModeTime;
 			var userModeTime = item.UserModeTime;
       var workingSet = item.WorkingSetSize;
+			var readBytes = item.ReadTransferCount;
+			var writeBytes = item.WriteTransferCount;
 			
-      processes.push(new ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet));
+      processes.push(new ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet, readBytes, writeBytes));
 		}
 		
 		return processes;
@@ -209,6 +236,40 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 	}
 	catch (err) {
     log("getTopProcessesByCPU(): " + err);
+		throw err;
+	}
+}
+
+/**
+ * Gets numTop processes from the process list that have the highest IO usage.
+ */
+function getTopProcessesByIOBytes(processes, oldProcesses, numTop) {
+	try {
+		var topProcesses = [];
+		
+		var oldProcessIndex = 0;
+		for(var i=0; i<processes.length; i++) {
+			var process = processes[i];
+
+			var oldInfo = findCorrespondingProcess(process, oldProcesses, oldProcessIndex);
+			oldProcessIndex = oldInfo.newIndex;
+			var oldProcess = oldInfo.oldProcess;
+			
+			if(oldProcess != null) {
+				process.totalBytes -= (oldProcess.readBytes + oldProcess.writeBytes);
+			}			
+						
+			// ignore system processes
+			if( process.processId )
+				topProcesses.push(process);
+		}
+		
+		topProcesses.sort(sortProcessesByIOBytes);
+		
+		return { topProcesses: topProcesses.slice(0,numTop) };
+	}
+	catch (err) {
+		log("getTopProcessesByIOBytes(): " + err);
 		throw err;
 	}
 }
@@ -314,32 +375,44 @@ function update() {
         throw "output: " + prob.message;
       }
     }
-    else 
-      if (window.resourceType === "memory") {
-        try {
-          processes.sort(sortProcessesByMem);
-        } 
-        catch (prob) {
-          log("failed sorting memory: " + prob.message);
-          throw "sorting: " + prob.message;
-        }
-        
-        var topProcesses = processes.slice(0, window.numProcesses);
-        
-        try {
-          for (var i = 0; i < topProcesses.length; i++) {
-            var process = topProcesses[i];
-            if ( !process || process.processId == null) {
-              continue;
-            }
-            var memusage = process.workingSet;
-            result += '<tr><td class="processName">' + process.name + '</td><td class="memUsage">' + formatBytes(memusage) + "<td>";
-          }
-        } catch (prob) {
-          log("failed getting working set: " + prob.message);
-          throw "output: " + prob.message;
-        }
+    else if (window.resourceType === "memory") {
+      try {
+        processes.sort(sortProcessesByMem);
+      } 
+      catch (prob) {
+        log("failed sorting memory: " + prob.message);
+        throw "sorting: " + prob.message;
       }
+        
+      var topProcesses = processes.slice(0, window.numProcesses);
+       
+      try {
+        for (var i = 0; i < topProcesses.length; i++) {
+          var process = topProcesses[i];
+          if ( !process || process.processId == null) {
+            continue;
+          }
+          var memusage = process.workingSet;
+          result += '<tr><td class="processName">' + process.name + '</td><td class="memUsage">' + formatBytes(memusage) + "<td>";
+        }
+      } catch (prob) {
+        log("failed getting working set: " + prob.message);
+        throw "output: " + prob.message;  
+      }
+    }
+    else if(window.resourceType === "iobytes") {
+			processes.sort(sortProcessesById);
+    	var topProcessInfo = getTopProcessesByIOBytes(processes, window.oldProcesses, window.numProcesses);			
+    	window.oldProcesses = processes;
+    		
+    	var topProcesses = topProcessInfo.topProcesses;
+    	var result = "";
+    	for(var i = 0; i < topProcesses.length; i++) {
+    		var process = topProcesses[i];	
+			  var totalBytesPerSec = process.totalBytes / (window.updateInterval / 1000)
+    		result += '<tr><td class="processName">' + process.name + '</td><td class="percentage">' + formatBytes(totalBytesPerSec) + "/s<td>";
+    	}
+		}
     
     updateGadgetContent("<table>" + result + "</table>");
     
