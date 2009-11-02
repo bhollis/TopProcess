@@ -7,7 +7,7 @@
         <info url="http://brh.numbera.com/software/sidebargadgets/" text="BRH.numbera.com" />
     	<logo src="icon.png" />
     </author>
-    <copyright>&#169; 2007</copyright>
+    <copyright>&#169; 2007-2009</copyright>
     <description>Displays the processes that are using the most CPU, memory, or IO on your system.</description>
 	<icons>
     	<icon height="64" width="64" src="icon.png" />
