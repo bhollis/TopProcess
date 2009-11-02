@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<project name="TopProcess" default="gadget">
+  <target name="gadget">
+    <delete file="${ant.project.name}.gadget"/>
+    <zip destfile="${ant.project.name}.gadget">
+      <zipfileset dir=".">
+         <exclude name="**.svn" />
+         <exclude name="build.xml" />
+         <exclude name=".project" />
+         <exclude name="topprocess_todo.txt" />
+         <exclude name="**/$devcrap/**" />
+         <exclude name="**/pkg/**" />
+      </zipfileset>
+    </zip>
+    <echo message="Remember to bump the version number in every gadget.xml!" />
+  </target>
+</project>
