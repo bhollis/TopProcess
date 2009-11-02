@@ -16,13 +16,13 @@
 function ProcessInfo(processId, name, kernelModeTime, userModeTime, workingSet, readBytes, writeBytes) {
 	this.processId = processId;
 	this.name = name;
-	this.kernelModeTime = Number(kernelModeTime || 0) ;
-	this.userModeTime = Number(userModeTime || 0);
-	this.totalTime = this.kernelModeTime + this.userModeTime;
-  this.workingSet = Number(workingSet || 0);
-	this.readBytes = Number(readBytes || 0);
-	this.writeBytes = Number(writeBytes || 0);
-	this.totalBytes = this.readBytes + this.writeBytes;
+	this.kernelModeTime = BigInteger.parse(kernelModeTime || 0) ;
+	this.userModeTime = BigInteger.parse(userModeTime || 0);
+	this.totalTime = this.kernelModeTime.add(this.userModeTime);
+  this.workingSet = BigInteger.parse(workingSet || 0);
+	this.readBytes = BigInteger.parse(readBytes || 0);
+	this.writeBytes = BigInteger.parse(writeBytes || 0);
+	this.totalBytes = this.readBytes.add(this.writeBytes);
 }
 
 function sortProcessesById(a,b) {
@@ -39,7 +39,7 @@ function sortProcessesById(a,b) {
       message += 'b:' + b.name + ' - ';
    
     
-    log("sortProcessesById: " + message + e.message);  
+    log("sortProcessesById: " + message, e);  
       
     throw message + e.message;
   }
@@ -50,9 +50,9 @@ function sortProcessesById(a,b) {
  */
 function sortProcessesByMem(a,b) {
   try {
-    var aVal = a ? a.workingSet : -100;
-    var bVal = b ? b.workingSet : -100;
-    return bVal - aVal;
+    var aVal = a ? a.workingSet : BigInteger.parse(-100);
+    var bVal = b ? b.workingSet : BigInteger.parse(-100);
+    return bVal.compare(aVal);
   } catch (e) {
     var message = '';
     if (a)
@@ -61,7 +61,7 @@ function sortProcessesByMem(a,b) {
     if (b)
       message += 'b:' + b.name + ' - ';
       
-    log("sortProcessesByMem: " + message + e.message);
+    log("sortProcessesByMem: " + message, e);
     
     throw message + e.message;
   }
@@ -72,9 +72,9 @@ function sortProcessesByMem(a,b) {
  */
 function sortProcessesByTotalTime(a,b) {
 	try {
-    var aVal = a ? a.totalTime : -100;
-    var bVal = b ? b.totalTime : -100;
-    return bVal - aVal;
+    var aVal = a ? a.totalTime : BigInteger.parse(-100);
+    var bVal = b ? b.totalTime : BigInteger.parse(-100);
+    return bVal.compare(aVal);
   } catch (e) {
     var message = '';
     if (a)
@@ -83,7 +83,7 @@ function sortProcessesByTotalTime(a,b) {
     if (b)
       message += 'b:' + b.name + ' - ';
       
-    log("sortProcessesByTotalTime: " + message + e.message);
+    log("sortProcessesByTotalTime: " + message, e);
     
     throw message + e.message;
   }
@@ -94,9 +94,9 @@ function sortProcessesByTotalTime(a,b) {
  */
 function sortProcessesByIOBytes(a,b) {
 	try {
-    var aVal = a ? a.totalBytes : -100;
-    var bVal = b ? b.totalBytes : -100;
-    return bVal - aVal;
+    var aVal = a ? a.totalBytes : BigInteger.parse(-100);
+    var bVal = b ? b.totalBytes : BigInteger.parse(-100);
+    return bVal.compare(aVal);
   } catch (e) {
     var message = '';
     if (a)
@@ -105,17 +105,17 @@ function sortProcessesByIOBytes(a,b) {
     if (b)
       message += 'b:' + b.name + ' - ';
       
-    log("sortProcessesByIOBytes: " + message + e.message);
+    log("sortProcessesByIOBytes: " + message, e);
     
     throw message + e.message;
   }
 }
 
-function log(content) {
+function log(content, e) {
   var fso = new ActiveXObject("Scripting.FileSystemObject");
   var s = fso.OpenTextFile(System.Gadget.path + "\\gadget.log", 8, true);
 
-  s.WriteLine(new Date() + ": " + content);
+  s.WriteLine(new Date() + ": " + content + (e ? (e.message || e) : ''));
   s.Close();
 }
 
@@ -153,7 +153,7 @@ function getProcessStats() {
 		return processes;
 	}
 	catch (err) {
-    log("getProcessStats: " + err);
+    log("getProcessStats: ", err);
 		throw err;
 	}
 }
@@ -176,7 +176,7 @@ function findCorrespondingProcess(process, oldProcesses, startIndex) {
 		}
 	}
 	catch (err) {
-    log("findCorrespondingProcess: " + err);
+    log("findCorrespondingProcess: " , err);
 		throw err;
 	}
 }
@@ -186,7 +186,7 @@ function findCorrespondingProcess(process, oldProcesses, startIndex) {
  */
 function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 	try {
-		var systemTotalTime = new Number(0);
+		var systemTotalTime = BigInteger.parse(0);
 		
 		var topProcesses = [];
 		
@@ -203,7 +203,7 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 		    oldInfo = findCorrespondingProcess(process, oldProcesses, oldProcessIndex);
 	    }
       catch(ex) {        
-        log("findCorrespondingProcess cpu: " + err);
+        log("findCorrespondingProcess cpu: " , err);
 		    throw err;
       }
       
@@ -212,10 +212,10 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 			
 			if(oldProcess && oldProcess.kernelModeTime != null && oldProcess.userModeTime != null) {
         // Find the delta in time since the last sample (don't use totalTime on oldProcess, it's already been deltafied)
-				process.totalTime -= (oldProcess.kernelModeTime + oldProcess.userModeTime);
+				process.totalTime = process.totalTime.subtract(oldProcess.kernelModeTime).subtract(oldProcess.userModeTime);
 			}			
 			
-			systemTotalTime += process.totalTime;
+			systemTotalTime = systemTotalTime.add(process.totalTime);
 			
 			// ignore system processes
 			if( process.processId )
@@ -226,7 +226,7 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
       topProcesses.sort(sortProcessesByTotalTime);
     }
     catch(ex) {
-      log("sortProcessesByTotalTime(): " + err);
+      log("sortProcessesByTotalTime(): " , err);
 		  throw err;
     }
 		
@@ -235,7 +235,7 @@ function getTopProcessesByCPU(processes, oldProcesses, numTop) {
 				 totalTime: systemTotalTime }; 
 	}
 	catch (err) {
-    log("getTopProcessesByCPU(): " + err);
+    log("getTopProcessesByCPU(): " , err);
 		throw err;
 	}
 }
@@ -256,7 +256,7 @@ function getTopProcessesByIOBytes(processes, oldProcesses, numTop) {
 			var oldProcess = oldInfo.oldProcess;
 			
 			if(oldProcess != null) {
-				process.totalBytes -= (oldProcess.readBytes + oldProcess.writeBytes);
+				process.totalBytes = process.totalBytes.subtract(oldProcess.readBytes).subtract(oldProcess.writeBytes);
 			}			
 						
 			// ignore system processes
@@ -269,7 +269,7 @@ function getTopProcessesByIOBytes(processes, oldProcesses, numTop) {
 		return { topProcesses: topProcesses.slice(0,numTop) };
 	}
 	catch (err) {
-		log("getTopProcessesByIOBytes(): " + err);
+		log("getTopProcessesByIOBytes(): " , err);
 		throw err;
 	}
 }
@@ -298,7 +298,7 @@ function updateGadgetContent(content) {
 		}
 	}
 	catch (err) {
-    log("updateGadgetContent(): " + err);
+    log("updateGadgetContent(): " , err);
 		throw err;
 	}
 }
@@ -332,7 +332,8 @@ function reset() {
   log("RESETTING");
 	window.oldProcesses = getProcessStats();
   window.oldProcesses.sort(sortProcessesById);
-	window.updateTimer = setTimeout("update()", 500);
+  clearTimeout(window.updateTimer);
+	window.updateTimer = setTimeout("update()", 60000);
 }
 
 function update() {
@@ -367,7 +368,8 @@ function update() {
           if ( !process || process.processId == null) {
             continue;
           }
-          var percentUsage = Math.round((process.totalTime / totalTime) * 10000) / 100;
+          //var percentUsage = Math.round((process.totalTime / totalTime) * 10000) / 100;
+          var percentUsage = process.totalTime.multiply(10000).divide(totalTime).toJSValue() / 100.0;
           result += '<tr><td class="processName">' + process.name + '</td><td class="percentage">' + percentUsage.toFixed(2) + "%<td>";
         }
       } catch (prob) {
@@ -409,7 +411,7 @@ function update() {
     	var result = "";
     	for(var i = 0; i < topProcesses.length; i++) {
     		var process = topProcesses[i];	
-			  var totalBytesPerSec = process.totalBytes / (window.updateInterval / 1000)
+			  var totalBytesPerSec = process.totalBytes.divide(window.updateInterval / 1000);
     		result += '<tr><td class="processName">' + process.name + '</td><td class="percentage">' + formatBytes(totalBytesPerSec) + "/s<td>";
     	}
 		}
@@ -419,22 +421,22 @@ function update() {
     window.updateTimer = setTimeout("update()", window.updateInterval);
   } 
   catch (err) {
-    log("update: " + err);
+    log("update: " , err);
     reset();
   }
 }
 
 function formatBytes(bytes) {
-    if(bytes < 1024) {
+    if(bytes.compare(1024) < 0) {
         return bytes + "B";
     }
-    else if(bytes < 1048576 /*1024*1024*/) {
+    else if(bytes.compare(1048576) < 0 /*1024*1024*/) {
         return Math.round(bytes / 1024) + "KB";
     }
-    else if(bytes < 1073741824 /*1024*1024*1024*/) {
+    else if(bytes.compare(1073741824) < 0 /*1024*1024*1024*/) {
         return Math.round(bytes / 1048576) + "MB";
     }
-    else if(bytes < 1099511627776 /*1024*1024*1024*1024*/) {
+    else if(bytes.compare(1099511627776) < 0 /*1024*1024*1024*1024*/) {
         return Math.round(bytes / 1073741824) + "GB";
     }
     else 

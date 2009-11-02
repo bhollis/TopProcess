@@ -2,7 +2,7 @@
 <gadget>
     <name>Top Processes</name>
     <namespace>Brh.Gadgets</namespace>
-    <version>1.4</version>
+    <version>1.5</version>
     <author name="Benjamin Hollis">
         <info url="http://brh.numbera.com/software/sidebargadgets/" text="BRH.numbera.com" />
     	<logo src="icon.png" />
