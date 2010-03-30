@@ -112,11 +112,13 @@ function sortProcessesByIOBytes(a,b) {
 }
 
 function log(content, e) {
+  /*
   var fso = new ActiveXObject("Scripting.FileSystemObject");
   var s = fso.OpenTextFile(System.Gadget.path + "\\gadget.log", 8, true);
 
   s.WriteLine(new Date() + ": " + content + (e ? (e.message || e) : ''));
   s.Close();
+  */
 }
 
 
@@ -330,9 +332,9 @@ function init() {
 
 function reset() {
   log("RESETTING");
+  clearTimeout(window.updateTimer);
 	window.oldProcesses = getProcessStats();
   window.oldProcesses.sort(sortProcessesById);
-  clearTimeout(window.updateTimer);
 	window.updateTimer = setTimeout("update()", 60000);
 }
 
@@ -437,7 +439,8 @@ function formatBytes(bytes) {
         return Math.round(bytes / 1048576) + "MB";
     }
     else if(bytes.compare(1099511627776) < 0 /*1024*1024*1024*1024*/) {
-        return Math.round(bytes / 1073741824) + "GB";
+        // Show this as "1.4 GB"
+        return Math.round(bytes * 10 / 1073741824) / 10 + "GB";
     }
     else 
         return "Too big";
