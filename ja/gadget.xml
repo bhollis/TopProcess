@@ -2,12 +2,12 @@
 <gadget>
     <name>Top Processes</name>
     <namespace>Brh.Gadgets</namespace>
-    <version>1.6</version>
+    <version>1.7</version>
     <author name="Benjamin Hollis">
         <info url="http://benhollis.net/software/sidebargadgets/" text="BenHollis.net" />
     	<logo src="icon.png" />
     </author>
-    <copyright>&#169; 2007-2009</copyright>
+    <copyright>&#169; 2007-2010</copyright>
     <description>ＣＰＵの大分を使うプロセスを現します。</description>
 	<icons>
     	<icon height="64" width="64" src="icon.png" />

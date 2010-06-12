@@ -10,14 +10,17 @@
   <script type="text/javascript" src="Settings.js"></script>
 </head>
 <body onload="init();">
-	<p><label>Numero di processi da visualizzare: <input id="numProcesses" type="text" size="4" value="3"></label></p>
-	<p><label>Frequenza aggiornamenti in secondi: <input id="updateInterval" type="text" size="4" value="5"></label></p>
   <p><label>Visualizza: <select id="resourceType">
             <option value="cpu">Utilizzo di CPU</option>
             <option value="memory">Utilizzo di memoria (Working Set)</option>
             <option value="iobytes">IO Read/Write</option>
         </select>
     </label></p>
+  <p><label>Numero di processi da visualizzare: <input id="numProcesses" type="text" size="4" value="3"></label></p>
+	<p><label>Frequenza aggiornamenti in secondi: <input id="updateInterval" type="text" size="4" value="5"></label></p>
+  <span class="warning">Note: Setting the update time too low can cause TopProcess to use lots of CPU.</span>
+
   <span id="error"></span>
+  <p>Get more Windows Sidebar gadgets at <a href="http://benhollis.net/software/sidebargadgets/">BenHollis.net</a>.</p>
 </body>
 </html>

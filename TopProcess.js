@@ -1,7 +1,7 @@
 /**
  * @author Benjamin Hollis
  * 
- * Copyright 2007 Benjamin Hollis
+ * Copyright 2007-2010 Benjamin Hollis
  * See license.txt for additional license information.
  */
 
@@ -459,7 +459,7 @@ function LoadSettings() {
 	log("numProcesses: " + window.numProcesses);	
     
 	var updateInterval = System.Gadget.Settings.read("updateInterval");
-	window.updateInterval = Math.max((updateInterval || 0) * 1000, 3000);
+	window.updateInterval = Math.max((updateInterval || 5) * 1000, 100);
 	log("updateInterval: " + window.updateInterval);	
     
   var resourceType = System.Gadget.Settings.read("resourceType");

@@ -46,7 +46,7 @@ function SettingsClosing(event){
         return;
       }
       if (updateInterval > 0) {
-        System.Gadget.Settings.write("updateInterval", Math.max(updateInterval, 5));
+        System.Gadget.Settings.write("updateInterval", Math.max(updateInterval, 0.1));
       }
             
       System.Gadget.Settings.write("resourceType", document.getElementById("resourceType").value);
