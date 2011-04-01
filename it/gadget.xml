@@ -2,7 +2,7 @@
 <gadget>
     <name>Top Processes</name>
     <namespace>Brh.Gadgets</namespace>
-    <version>1.7</version>
+    <version>1.8</version>
     <author name="Benjamin Hollis">
         <info url="http://benhollis.net/software/sidebargadgets/" text="BenHollis.net" />
     	<logo src="icon.png" />

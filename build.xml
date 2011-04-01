@@ -4,7 +4,7 @@
     <delete file="${ant.project.name}.gadget"/>
     <zip destfile="${ant.project.name}.gadget">
       <zipfileset dir=".">
-         <exclude name="**.svn" />
+         <exclude name="**.git" />
          <exclude name="build.xml" />
          <exclude name=".project" />
          <exclude name="topprocess_todo.txt" />

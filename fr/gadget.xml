@@ -8,7 +8,7 @@
     	<logo src="icon.png" />
     </author>
     <copyright>&#169; 2007-2010</copyright>
-    <description>Displays the processes that are using the most CPU, memory, or IO on your system.</description>
+    <description>Visualisation de l'utilisation du processeur, de la mémoire et des entrées/sorties.</description>
 	<icons>
     	<icon height="64" width="64" src="icon.png" />
     </icons>

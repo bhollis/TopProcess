@@ -39,7 +39,6 @@ td.processName {
 	text-overflow: ellipsis;
     white-space: nowrap;
 	width:73px;
-	font-weight: lighter;
 }
 	
 td.percentage {
